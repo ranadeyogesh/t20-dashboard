@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>T20 World Cup Live Dashboard</title>
+  <style>
+    body { font-family: Arial; background: #f4f4f4; }
+    h1, h2 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    th { background: #333; color: #fff; }
+    #scoreboard { margin: 20px auto; width: 80%; background: #fff; padding: 10px; border: 1px solid #ddd; }
+  </style>
+</head>
+<body>
+  <h1>T20 World Cup Live Dashboard</h1>
+
+  <!-- Scoreboard Section -->
+  <div id="scoreboard">
+    <h2>Live Scoreboard</h2>
+    <p id="matchName"></p>
+    <p id="teamScores"></p>
+    <p id="matchStatus"></p>
+  </div>
+
+  <!-- Player Points Table -->
+  <table id="pointsTable">
+    <thead>
+      <tr>
+        <th>Player</th>
+        <th>Runs</th>
+        <th>Balls</th>
+        <th>Wickets</th>
+        <th>Catches</th>
+        <th>Points</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+<script>
+const API_KEY = "9c66b943-3740-4865-903b-c33b7ce22eb1"; 
+const MATCH_ID = "0cdf6736-ad9b-4e95-a647-5ee3a99c5510"; 
+
+async function fetchMatchData() {
+  const response = await fetch(`https://api.cricapi.com/v1/match_score?apikey=${API_KEY}&id=${MATCH_ID}`);
+  const data = await response.json();
+  if (!data || !data.data) return;
+
+  // Update scoreboard
+  document.getElementById("matchName").innerText = data.data.name;
+  document.getElementById("matchStatus").innerText = "Status: " + data.data.status;
+  if (data.data.score && data.data.score.length > 0) {
+    const scores = data.data.score.map(s => `${s.inning}: ${s.runs}/${s.wickets} in ${s.overs} overs`).join(" | ");
+    document.getElementById("teamScores").innerText = scores;
+  }
+
+  // Player points
+  const players = data.data.players || [];
+  const tbody = document.querySelector("#pointsTable tbody");
+  tbody.innerHTML = "";
+
+  players.forEach(p => {
+    let points = 0;
+
+    // Basic points
+    points += p.runs;
+    points += p.wickets * 20;
+    points += p.catches * 10;
+
+    // Bonus points
+    if (p.runs >= 50 && p.runs < 75) points += 10;
+    else if (p.runs >= 75 && p.runs < 100) points += 15;
+    else if (p.runs >= 100) points += 20;
+
+    if (p.strikeRate >= 150) points += 10;
+    if (p.wickets >= 3 && p.wickets < 5) points += 10;
+    else if (p.wickets >= 5) points += 20;
+
+    // Minus points
+    if (p.runs === 0) points -= 5;
+    if (p.strikeRate < 70) points -= 10;
+    if (p.wickets === 0) points -= 5;
+
+    // Captain’s double points
+    if (p.isCaptain) points *= 2;
+
+    // Man of the Match
+    if (p.isManOfTheMatch) points += 20;
+
+    // Bowling economy
+    if (p.overs && p.runsConceded) {
+      const economy = p.runsConceded / p.overs;
+      if (economy < 6) points += 10;
+      else if (economy >= 10) points -= 10;
+    }
+
+    const row = `<tr>
+      <td>${p.name}</td>
+      <td>${p.runs}</td>
+      <td>${p.balls}</td>
+      <td>${p.wickets}</td>
+      <td>${p.catches}</td>
+      <td>${points}</td>
+    </tr>`;
+    tbody.innerHTML += row;
+  });
+}
+
+// Refresh every 30 seconds
+setInterval(fetchMatchData, 30000);
+fetchMatchData();
+</script>
+</body>
+</html>
