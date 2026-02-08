@@ -39,7 +39,7 @@
 
 <script>
 const API_KEY = "9c66b943-3740-4865-903b-c33b7ce22eb1"; 
-const MATCH_ID = "0cdf6736-ad9b-4e95-a647-5ee3a99c5510"; 
+const MATCH_ID = "7940dc24-5f9f-416b-ba76-a86e441bd445"; 
 
 async function fetchMatchData() {
   const response = await fetch(`https://api.cricapi.com/v1/match_score?apikey=${API_KEY}&id=${MATCH_ID}`);
